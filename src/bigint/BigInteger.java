@@ -70,20 +70,30 @@ public class BigInteger {
 	 * @return BigInteger instance that stores the input integer.
 	 * @throws IllegalArgumentException If input is incorrectly formatted
 	 */
+	
+	// must be able to properly handle 0000 -> 0
 	public static BigInteger parse(String integer) 
 	throws IllegalArgumentException {
 		BigInteger bigInt = new BigInteger();
 		
 		for (int i = 0; i < integer.length(); i++) {
-			if (!Character.isDigit(integer.charAt(i)) && i !=0 ) {
+			if ((!Character.isDigit(integer.charAt(i)) && (i != 0)) || ( i == 0 && !Character.isDigit(integer.charAt(i)) && integer.charAt(i) != '-' && integer.charAt(i) != '+')) {
 				throw new IllegalArgumentException ("invalid format");
-			} else if (integer.charAt(i) == 0 && bigInt.front == null) {
 			} else if (Character.isDigit(integer.charAt(i))) {
-				bigInt.front = new DigitNode(Character.getNumericValue(integer.charAt(i)), bigInt.front);
+				if(integer.charAt(i) != '0' || bigInt.front != null) {
+					bigInt.front = new DigitNode(Character.getNumericValue(integer.charAt(i)), bigInt.front);
+					bigInt.numDigits++;
+				}
 			} else if (integer.charAt(i) == '-') {
 				bigInt.negative = true;
 			}
 		}
+		
+		if (bigInt.front == null) {
+			bigInt.front = new DigitNode(0, bigInt.front);
+			bigInt.negative = false;
+		}
+		
 		return bigInt;
 	}
 	
@@ -99,11 +109,124 @@ public class BigInteger {
 	 * @return Result big integer
 	 */
 	public static BigInteger add(BigInteger first, BigInteger second) {
+		BigInteger large = new BigInteger();
+		BigInteger small = new BigInteger();
 		
-		/* IMPLEMENT THIS METHOD */
 		
-		// following line is a placeholder for compilation
-		return null;
+		if (first.numDigits > second.numDigits) {
+			large = first;
+			small = second;
+		} else {
+			large = second;
+			small = first;
+		}
+		 
+		
+		DigitNode cL = large.front;
+		DigitNode cS = small.front;
+		
+		BigInteger answer = new BigInteger();
+		answer.front = new DigitNode(cL.digit, null);
+		answer.numDigits++;
+		DigitNode cA = answer.front;
+		
+		while(cL.next != null) {
+			cA.next = new DigitNode(cL.next.digit, null);
+			answer.numDigits++;
+			cA = cA.next;
+			cL = cL.next;
+		}
+		
+		cA = answer.front;
+		
+		if ((large.negative == true && small.negative == true)||(large.negative == false && small.negative == false)){
+		while(cS.next != null) {
+			cA.digit = cA.digit + cS.digit;
+			
+			cS = cS.next;
+			cA = cA.next;
+		}
+		
+		cA.digit = cA.digit + cS.digit;
+		
+		cA = answer.front;
+		while (cA.next != null) {
+			if(cA.digit >= 10) {
+				cA.digit = cA.digit % 10;
+				cA = cA.next;
+				cA.digit++;
+			} else {
+				cA = cA.next;
+			}
+		}
+		if (cA.digit >= 10) {
+			cA.digit = cA.digit % 10;
+			DigitNode newNode = new DigitNode(1, null);
+			cA.next = newNode;
+			large.numDigits++;
+		}
+		} else {
+			//perform the basic subtraction of each integer from the other
+			
+			while(cS.next != null) {
+				cA.digit = cA.digit - cS.digit;
+				
+				cS = cS.next;
+				cA = cA.next;
+			}
+			cA.digit = cA.digit - cS.digit;
+			
+			cA = answer.front;
+			
+			
+			// check if number of digits in each is the same, if so do some stuff to make the subtraction work
+			
+			if(large.numDigits == small.numDigits) {
+				while(cA.next != null) {
+					cA = cA.next;
+				}
+				if(cA.digit < 0) {
+					large.negative = !large.negative;
+					cA = answer.front;
+					while(cA.next != null) {
+						cA.digit = cA.digit * -1;
+						cA = cA.next;
+					}
+					cA.digit = cA.digit * -1;
+				}
+				
+				cA = answer.front;
+			}
+			
+			
+			//fix negative nodes
+			
+			while(cA.next != null) {
+				if(cA.digit < 0) {
+					cA.digit = 10 + cA.digit;
+					cA = cA.next;
+					cA.digit--;
+				} else {
+					cA = cA.next;
+				}	
+			}
+			cA = answer.front;
+			
+			
+			//deletes trailing zeros
+			
+			String strInt = "";
+			
+			while(cA.next != null) {
+				strInt = Integer.toString(cA.digit) + strInt;
+				cA = cA.next;
+			}
+			strInt = Integer.toString(cA.digit) + strInt;
+			
+			large = parse(strInt);
+			
+		}
+		return answer;
 	}
 	
 	/**
@@ -117,11 +240,52 @@ public class BigInteger {
 	 * @return A new BigInteger which is the product of the first and second big integers
 	 */
 	public static BigInteger multiply(BigInteger first, BigInteger second) {
+		BigInteger large = new BigInteger();
+		BigInteger small = new BigInteger();
 		
-		/* IMPLEMENT THIS METHOD */
+		int count = 0;
 		
-		// following line is a placeholder for compilation
-		return null;
+		if (first.numDigits > second.numDigits) {
+			large = first;
+			small = second;
+		} else {
+			large = second;
+			small = first;
+		}
+		
+		boolean finalSignNeg = true;
+		if((large.negative && !small.negative) || (!large.negative && small.negative)) {
+			finalSignNeg = true;
+		} else {
+			finalSignNeg = false;
+		}
+		
+		large.negative = false;
+		small.negative = false;
+		
+		
+		
+		DigitNode cS = small.front;
+		BigInteger answer = new BigInteger();
+		answer.front = new DigitNode(0,null);
+		
+		int place = 1;
+		while(cS.next != null) {
+			if(cS.digit > 0) {
+				for (int i = cS.digit*place; i > 0; i--) {
+					answer = add(large, answer);
+				}
+			}
+			place = place * 10;
+			cS = cS.next;
+		}
+		for (int i = cS.digit*place; i > 0; i--) {
+			answer = add(large, answer);
+		}
+		
+		answer.negative = finalSignNeg;
+		
+		return answer;
 	}
 	
 	
