@@ -112,14 +112,43 @@ public class BigInteger {
 		BigInteger large = new BigInteger();
 		BigInteger small = new BigInteger();
 		
+		DigitNode c1 = first.front;
+		DigitNode c2 = second.front;
 		
+		boolean firstLarge = true;
 		if (first.numDigits > second.numDigits) {
 			large = first;
 			small = second;
+		} else if(first.numDigits == second.numDigits){
+			while(c1.next != null) {
+				if (c1.digit > c2.digit) {
+					firstLarge = true;
+				} else if (c1.digit < c2.digit){
+					firstLarge = false;
+				}
+				c1 = c1.next;
+				c2 = c2.next;
+			}
+			
+			if (c1.digit > c2.digit) {
+				firstLarge = true;
+			} else if (c1.digit < c2.digit){
+				firstLarge = false;
+			}
+			
+			if (firstLarge) {
+				large = first;
+				small = second;
+			} else {
+				large = second;
+				small = first;
+			}
 		} else {
 			large = second;
 			small = first;
 		}
+		
+		
 		 
 		
 		DigitNode cL = large.front;
@@ -163,12 +192,13 @@ public class BigInteger {
 			cA.digit = cA.digit % 10;
 			DigitNode newNode = new DigitNode(1, null);
 			cA.next = newNode;
-			large.numDigits++;
+			answer.numDigits++;
 		}
 		} else {
 			//perform the basic subtraction of each integer from the other
 			
 			while(cS.next != null) {
+				System.out.println(cA.digit);
 				cA.digit = cA.digit - cS.digit;
 				
 				cS = cS.next;
@@ -186,7 +216,6 @@ public class BigInteger {
 					cA = cA.next;
 				}
 				if(cA.digit < 0) {
-					large.negative = !large.negative;
 					cA = answer.front;
 					while(cA.next != null) {
 						cA.digit = cA.digit * -1;
@@ -197,6 +226,7 @@ public class BigInteger {
 				
 				cA = answer.front;
 			}
+			
 			
 			
 			//fix negative nodes
@@ -223,8 +253,13 @@ public class BigInteger {
 			}
 			strInt = Integer.toString(cA.digit) + strInt;
 			
-			large = parse(strInt);
+			answer = parse(strInt);
 			
+		}
+		if(answer.front.digit == 0) {
+			answer.negative = false;
+		} else {
+			answer.negative = large.negative;
 		}
 		return answer;
 	}
@@ -243,7 +278,6 @@ public class BigInteger {
 		BigInteger large = new BigInteger();
 		BigInteger small = new BigInteger();
 		
-		int count = 0;
 		
 		if (first.numDigits > second.numDigits) {
 			large = first;
